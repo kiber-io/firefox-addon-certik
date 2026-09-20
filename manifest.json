@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Certificate Chain Inspector",
+  "version": "1.0.0",
+  "description": "Displays TLS connection details and the certificate chain for the current site.",
+  "permissions": [
+    "storage",
+    "webRequest",
+    "webRequestBlocking"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Certificate chain",
+    "default_popup": "popup.html",
+    "default_icon": "icon-gray.svg"
+  },
+  "icons": {
+    "48": "icon-gray.svg",
+    "96": "icon-gray.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "certificate-chain-inspector@local",
+      "strict_min_version": "115.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
+}

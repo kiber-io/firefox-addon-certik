@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import { X509Certificate } from "node:crypto";
+import { rootCertificates } from "node:tls";
+import { connectionIndicator, describeTrust } from "./status.mjs";
+import { parseCertificate } from "./x509.mjs";
+
+assert.match(describeTrust({ state: "insecure" }).title, /No secure/);
+assert.match(describeTrust({ state: "secure", certificates: [{ isBuiltInRoot: true }] }).detail, /Mozilla Root Store/);
+assert.match(describeTrust({ state: "secure", certificates: [{ isBuiltInRoot: false }] }).detail, /operating-system/);
+assert.match(describeTrust({ state: "secure", isUntrusted: true }).title, /exception/);
+assert.match(describeTrust({ state: "secure", isDomainMismatch: true }).detail, /hostname mismatch/);
+assert.equal(connectionIndicator({ state: "secure" }).color, "green");
+assert.equal(connectionIndicator({ state: "secure", isUntrusted: true }).color, "yellow");
+assert.equal(connectionIndicator({ state: "insecure" }).color, "gray");
+
+const parsed = parseCertificate(new X509Certificate(rootCertificates[0]).raw);
+assert.equal(parsed.version, 3);
+assert.ok(parsed.signatureAlgorithm);
+assert.ok(parsed.publicKeyAlgorithm);
+
+console.log("OK");

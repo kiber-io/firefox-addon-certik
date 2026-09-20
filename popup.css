@@ -1,0 +1,34 @@
+:root {
+  color-scheme: light dark;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+
+body {
+  box-sizing: border-box;
+  margin: 0;
+  width: 520px;
+  max-height: 600px;
+  overflow-y: auto;
+  color: CanvasText;
+  background: Canvas;
+}
+
+main { padding: 16px; }
+h1 { margin: 0 0 4px; font-size: 18px; overflow-wrap: anywhere; }
+h2 { margin: 18px 0 8px; font-size: 14px; }
+p { margin: 6px 0; }
+.muted, .label { color: GrayText; }
+.loading, .empty { padding: 18px 2px; }
+.status { margin: 14px 0; padding: 10px 12px; border-left: 4px solid #777; background: color-mix(in srgb, CanvasText 7%, Canvas); }
+.status.good { border-color: #2e9b50; }
+.status.warn { border-color: #d89a00; }
+.status.bad { border-color: #d33; }
+.status strong { display: block; margin-bottom: 3px; }
+.grid { display: grid; grid-template-columns: 145px 1fr; gap: 5px 10px; margin: 0; }
+.grid dt, .grid dd { margin: 0; overflow-wrap: anywhere; }
+.chain { display: grid; gap: 9px; }
+details { border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas); border-radius: 6px; }
+summary { cursor: pointer; padding: 9px 11px; font-weight: 600; overflow-wrap: anywhere; }
+details .grid { padding: 0 11px 11px; }
+.pill { display: inline-block; margin-left: 5px; padding: 1px 6px; border-radius: 10px; font-size: 11px; font-weight: 600; background: color-mix(in srgb, #2e9b50 22%, Canvas); }
+code { font: 11px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
