@@ -4,12 +4,26 @@ import { describeTrust, hasCertificateException } from "./status.mjs";
 const text = (value) => value ?? "—";
 const yesNo = (value) => value === undefined ? "—" : value ? "yes" : "no";
 const date = (value) => value ? new Date(value).toLocaleString("en-US") : "—";
-const html = (value) => String(text(value)).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[char]);
+
+function element(tag, properties = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [name, value] of Object.entries(properties)) {
+    if (name === "className") node.className = value;
+    else if (name === "open") node.open = value;
+    else node.setAttribute(name, value);
+  }
+  node.append(...children);
+  return node;
+}
 
 function rows(items) {
-  return `<dl class="grid">${items.map(([label, value, code = false]) =>
-    `<dt class="label">${label}</dt><dd>${code ? `<code>${html(value)}</code>` : html(value)}</dd>`
-  ).join("")}</dl>`;
+  const dl = element("dl", { className: "grid" });
+  for (const [label, value, code = false] of items) {
+    const dd = element("dd");
+    dd.append(code ? element("code", {}, [String(text(value))]) : String(text(value)));
+    dl.append(element("dt", { className: "label" }, [label]), dd);
+  }
+  return dl;
 }
 
 function certificate(cert, index, total) {
@@ -17,9 +31,10 @@ function certificate(cert, index, total) {
   let parsed = {};
   try { parsed = cert.rawDER ? parseCertificate(cert.rawDER) : {}; } catch (error) { parsed.parseError = error.message; }
   const list = (values) => values?.length ? values.join("; ") : undefined;
-  return `<details ${index === 0 ? "open" : ""}>
-    <summary>${index + 1}. ${html(cert.subject)} <span class="pill">${role}</span></summary>
-    ${rows([
+  const details = element("details", { open: index === 0 });
+  details.append(
+    element("summary", {}, [`${index + 1}. ${text(cert.subject)} `, element("span", { className: "pill" }, [role])]),
+    rows([
       ["Subject", cert.subject],
       ["Issuer", cert.issuer],
       ["Subject Alternative Names", list(parsed.alternativeNames)],
@@ -39,36 +54,49 @@ function certificate(cert, index, total) {
       ["SHA-1", cert.fingerprint?.sha1, true],
       ["Public Key SHA-256", cert.subjectPublicKeyInfoDigest?.sha256, true],
       ["DER Parsing Error", parsed.parseError],
-    ])}
-  </details>`;
+    ]),
+  );
+  return details;
+}
+
+function statusBox(className, title, detail) {
+  return element("div", { className: `status ${className}` }, [
+    element("strong", {}, [title]),
+    detail,
+  ]);
 }
 
 function render(tab, record) {
   const app = document.querySelector("#app");
   const host = (() => { try { return new URL(tab.url).hostname || tab.url; } catch { return tab.url; } })();
+  app.replaceChildren(element("h1", {}, [text(host)]));
 
   if (!record) {
-    app.innerHTML = `<h1>${html(host)}</h1><p class="empty">No connection data. Reload an HTTP or HTTPS page and open the extension again.</p>`;
+    app.append(element("p", { className: "empty" }, ["No connection data. Reload an HTTP or HTTPS page and open the extension again."]));
     return;
   }
   if (record.error) {
-    app.innerHTML = `<h1>${html(host)}</h1><div class="status bad"><strong>Connection failed</strong>${html(record.error)}. Certificate data is unavailable when the TLS handshake fails.</div>`;
+    app.append(statusBox("bad", "Connection failed", `${record.error}. Certificate data is unavailable when the TLS handshake fails.`));
     return;
   }
 
   const info = record.securityInfo;
   const trust = describeTrust(info);
   const certs = info.certificates ?? [];
+  app.append(element("p", { className: "muted" }, [text(record.url)]), statusBox(trust.tone, trust.title, trust.detail));
+
   const exception = hasCertificateException(info);
-  const incompleteChain = exception && certs.length < 2;
-  app.innerHTML = `
-    <h1>${html(host)}</h1>
-    <p class="muted">${html(record.url)}</p>
-    <div class="status ${trust.tone}"><strong>${html(trust.title)}</strong>${html(trust.detail)}</div>
-    ${incompleteChain ? `<div class="status warn"><strong>Incomplete certificate chain</strong>The WebExtensions API returned only the site certificate because no trusted chain was constructed.</div>` : ""}
-    ${certs.length ? `<h2>Certificate chain (${certs.length})</h2><section class="chain">${certs.map((cert, index) => certificate(cert, index, certs.length)).join("")}</section>` : ""}
-    <h2>Connection</h2>
-    ${rows([
+  if (exception && certs.length < 2) {
+    app.append(statusBox("warn", "Incomplete certificate chain", "The WebExtensions API returned only the site certificate because no trusted chain was constructed."));
+  }
+  if (certs.length) {
+    app.append(element("h2", {}, [`Certificate chain (${certs.length})`]));
+    app.append(element("section", { className: "chain" }, certs.map((cert, index) => certificate(cert, index, certs.length))));
+  }
+
+  app.append(
+    element("h2", {}, ["Connection"]),
+    rows([
       ["State", info.state],
       ["TLS Version", info.protocolVersion],
       ["Cipher Suite", info.cipherSuite, true],
@@ -84,7 +112,8 @@ function render(tab, record) {
       ["Outside Validity Period", yesNo(info.isNotValidAtThisTime)],
       ["Extended Validation", yesNo(info.isExtendedValidation)],
       ["Weakness Reason", info.weaknessReasons],
-    ])}`;
+    ]),
+  );
 }
 
 async function main() {
@@ -95,5 +124,6 @@ async function main() {
 }
 
 if (typeof document !== "undefined") main().catch((error) => {
-  document.querySelector("#app").innerHTML = `<p class="empty">Error: ${html(error.message)}</p>`;
+  const app = document.querySelector("#app");
+  app.replaceChildren(element("p", { className: "empty" }, [`Error: ${error.message}`]));
 });
