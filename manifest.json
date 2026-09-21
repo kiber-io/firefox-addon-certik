@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Certificate Chain Inspector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Displays TLS connection details and the certificate chain for the current site.",
   "permissions": [
     "storage",
