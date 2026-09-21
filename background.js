@@ -29,10 +29,19 @@ browser.webRequest.onHeadersReceived.addListener(
     if (tabId < 0) return;
 
     try {
-      const securityInfo = await browser.webRequest.getSecurityInfo(requestId, {
+      let securityInfo = await browser.webRequest.getSecurityInfo(requestId, {
         certificateChain: true,
         rawDER: true,
       });
+      if (!securityInfo.certificates?.length) {
+        const leafInfo = await browser.webRequest.getSecurityInfo(requestId, {
+          certificateChain: false,
+          rawDER: true,
+        });
+        if (leafInfo.certificates?.length) {
+          securityInfo = { ...securityInfo, certificates: leafInfo.certificates };
+        }
+      }
       await save(tabId, { url, capturedAt: Date.now(), securityInfo });
       const indicator = connectionIndicator(securityInfo);
       setIndicator(tabId, indicator.color, indicator.title);
@@ -46,10 +55,17 @@ browser.webRequest.onHeadersReceived.addListener(
 );
 
 browser.webRequest.onErrorOccurred.addListener(
-  ({ tabId, url, error }) => {
+  async ({ tabId, url, error }) => {
     if (tabId >= 0) {
-      save(tabId, { url, error });
-      setIndicator(tabId, "red", "Connection error");
+      const existing = await read(tabId);
+      if (existing?.securityInfo) {
+        await save(tabId, { ...existing, lastError: error });
+        const indicator = connectionIndicator(existing.securityInfo);
+        setIndicator(tabId, indicator.color, indicator.title);
+      } else {
+        await save(tabId, { url, error });
+        setIndicator(tabId, "red", "Connection error");
+      }
     }
   },
   { urls: ["<all_urls>"], types: ["main_frame"] },

@@ -30,5 +30,11 @@ p { margin: 6px 0; }
 details { border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas); border-radius: 6px; }
 summary { cursor: pointer; padding: 9px 11px; font-weight: 600; overflow-wrap: anywhere; }
 details .grid { padding: 0 11px 11px; }
+.certificate-group { padding: 0 11px 11px; }
+.certificate-group h3 { margin: 10px 0 6px; font-size: 12px; }
+.more-values { border: 0; border-radius: 0; }
+.more-values summary { padding: 0; font-weight: 400; }
+.more-values .grid { padding: 5px 0 0 18px; }
+.more-label { margin-left: 8px; color: GrayText; font-size: 11px; }
 .pill { display: inline-block; margin-left: 5px; padding: 1px 6px; border-radius: 10px; font-size: 11px; font-weight: 600; background: color-mix(in srgb, #2e9b50 22%, Canvas); }
 code { font: 11px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
