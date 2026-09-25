@@ -1,4 +1,4 @@
-# Certificate Chain Inspector
+# Certik
 
 Firefox Manifest V3 extension that displays TLS connection parameters and the certificate chain for the active tab.
 
