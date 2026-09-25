@@ -55,13 +55,11 @@ function downloadButton(label, filename, content) {
   const button = element("button", { type: "button", className: "download" }, [label]);
   button.disabled = !content;
   button.addEventListener("click", async () => {
-    const url = URL.createObjectURL(new Blob([content], { type: "application/x-pem-file" }));
     try {
-      await browser.downloads.download({ url, filename, saveAs: false });
-    } catch (error) {
-      console.error("Certificate download failed", error);
-    } finally {
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      await browser.runtime.sendMessage({ type: "download-pem", filename, content });
+      window.close();
+    } catch {
+      // The browser reports download errors through its native download UI.
     }
   });
   return button;

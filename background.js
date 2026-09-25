@@ -71,7 +71,23 @@ browser.webRequest.onErrorOccurred.addListener(
   { urls: ["<all_urls>"], types: ["main_frame"] },
 );
 
-browser.runtime.onMessage.addListener(async ({ type, tabId }) => {
+browser.runtime.onMessage.addListener(async ({ type, tabId, filename, content }) => {
+  if (type === "download-pem") {
+    const platform = await browser.runtime.getPlatformInfo();
+    if (platform.os === "android") {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      await browser.storage.session.set({ [`download-${id}`]: { filename, content } });
+      await browser.tabs.create({ url: browser.runtime.getURL(`download.html?id=${encodeURIComponent(id)}`) });
+      return { id };
+    }
+    const url = URL.createObjectURL(new Blob([content], { type: "application/x-pem-file" }));
+    try {
+      const id = await browser.downloads.download({ url, filename, saveAs: false });
+      return { id };
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
+  }
   if (type !== "get-security-info") return undefined;
   return read(tabId);
 });

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Certik — download</title>
+    <style>
+      :root { color-scheme: light dark; font: 15px/1.5 system-ui, sans-serif; }
+      body { box-sizing: border-box; margin: 0; min-height: 100vh; display: grid; place-items: center; color: CanvasText; background: Canvas; }
+      main { width: min(420px, calc(100% - 32px)); padding: 24px; border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas); border-radius: 12px; box-sizing: border-box; }
+      h1 { margin: 0 0 4px; font-size: 21px; }
+      p { margin: 8px 0; color: GrayText; }
+      code { display: block; margin: 16px 0; padding: 10px; overflow-wrap: anywhere; border-radius: 6px; background: color-mix(in srgb, CanvasText 8%, Canvas); }
+      a { display: inline-block; padding: 9px 14px; border-radius: 6px; color: ButtonText; background: ButtonFace; font-weight: 600; text-decoration: none; }
+      a:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Certik</h1>
+      <p>Certificate download</p>
+      <code id="filename">Preparing…</code>
+      <a id="download" hidden>Download certificate</a>
+      <p id="status">Preparing the PEM file…</p>
+    </main>
+    <script type="module" src="download.mjs"></script>
+  </body>
+</html>
