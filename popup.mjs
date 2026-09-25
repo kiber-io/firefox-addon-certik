@@ -33,6 +33,40 @@ export function formatDn(value) {
     (_, oid, hex) => `${dnOids[oid] ?? `OID.${oid}`}=${decodeDnValue(hex)}`);
 }
 
+function derBytes(rawDER) {
+  if (rawDER instanceof ArrayBuffer) return new Uint8Array(rawDER);
+  if (ArrayBuffer.isView(rawDER)) return new Uint8Array(rawDER.buffer, rawDER.byteOffset, rawDER.byteLength);
+  return Uint8Array.from(rawDER ?? []);
+}
+
+export function toPem(rawDER) {
+  const bytes = derBytes(rawDER);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const base64 = btoa(binary).match(/.{1,64}/g)?.join("\n") ?? "";
+  return `-----BEGIN CERTIFICATE-----\n${base64}\n-----END CERTIFICATE-----\n`;
+}
+
+function safeFilename(value) {
+  return String(value || "certificate").replace(/[^\w.-]+/g, "_").replace(/^\.+/, "") || "certificate";
+}
+
+function downloadButton(label, filename, content) {
+  const button = element("button", { type: "button", className: "download" }, [label]);
+  button.disabled = !content;
+  button.addEventListener("click", async () => {
+    const url = URL.createObjectURL(new Blob([content], { type: "application/x-pem-file" }));
+    try {
+      await browser.downloads.download({ url, filename, saveAs: false });
+    } catch (error) {
+      console.error("Certificate download failed", error);
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
+  });
+  return button;
+}
+
 const dnLabels = {
   CN: "Common Name", O: "Organization", C: "Country", ST: "State/Province",
   L: "Locality", STREET: "Street", OGRN: "OGRN", INN: "INN", INNLE: "INNLE",
@@ -115,6 +149,7 @@ function certificate(cert, index, total) {
   const details = element("details", { open: index === 0 });
   details.append(
     element("summary", {}, [`${index + 1}. ${commonName} `, element("span", { className: "pill" }, [role])]),
+    element("div", { className: "certificate-actions" }, [downloadButton("Download PEM", `${safeFilename(commonName)}.pem`, cert.rawDER ? toPem(cert.rawDER) : "")]),
     group("Subject Name", subject),
     group("Issuer Name", issuer),
     group("Validity", [
@@ -179,7 +214,13 @@ function render(tab, record) {
       : "Firefox did not expose certificate objects for this certificate exception."));
   }
   if (certs.length) {
-    app.append(element("h2", {}, [`Certificate chain (${certs.length})`]));
+    const chainPem = certs.filter((cert) => cert.rawDER).map((cert) => toPem(cert.rawDER)).join("\n");
+    app.append(
+      element("div", { className: "chain-heading" }, [
+        element("h2", {}, [`Certificate chain (${certs.length})`]),
+        downloadButton("Download chain (PEM)", `${safeFilename(host)}-chain.pem`, chainPem),
+      ]),
+    );
     app.append(element("section", { className: "chain" }, certs.map((cert, index) => certificate(cert, index, certs.length))));
   }
 
